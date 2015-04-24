@@ -1,0 +1,51 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "MartialElch",
+    "longName": "Aviator 24h Watchface",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/Zifferblatt.png",
+                "name": "IMAGE_BACKGROUND",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Sekunde.png",
+                "name": "IMAGE_SECOND_HAND",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Minute_Inner.png",
+                "name": "IMAGE_MINUTE_HAND_INNER",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Minute_Outer.png",
+                "name": "IMAGE_MINUTE_HAND_OUTER",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Stunde_Inner.png",
+                "name": "IMAGE_HOUR_HAND_INNER",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Stunde_Outer.png",
+                "name": "IMAGE_HOUR_HAND_OUTER",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "2",
+    "shortName": "Aviator 24h",
+    "uuid": "0a1a7a13-d798-4067-ad0f-6cda4cd9b158",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
