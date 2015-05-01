@@ -57,10 +57,17 @@ static void update_time() {
 
 static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_second(tick_time);
-  if (units_changed & MINUTE_UNIT)
+
+  // update minute handle only every 10 sec
+  if (tick_time->tm_sec%10 == 0)
     update_minute(tick_time);
-  if (units_changed & HOUR_UNIT)
-    update_hour(tick_time);
+
+  // update hour handle only every 10 min
+  if (units_changed & MINUTE_UNIT)
+    if (tick_time->tm_min%10 == 0)
+      update_hour(tick_time);
+
+  // update date only when it changes
   if (units_changed & DAY_UNIT)
     update_date(tick_time);
 }
