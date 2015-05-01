@@ -17,34 +17,49 @@ static RotBitmapLayer *minute_hand_inner_layer;
 static RotBitmapLayer *minute_hand_outer_layer;
 static RotBitmapLayer *second_hand_layer;
 
-static void update_date() {
-  time_t temp = time(NULL); 
-  struct tm *tick_time = localtime(&temp);
+static void update_date(struct tm *tick_time t) {
   static char buffer[] = "00";
 
-  snprintf(buffer, sizeof("00"), "%d", tick_time->tm_mday);
+  snprintf(buffer, sizeof("00"), "%d", t->tm_mday);
   text_layer_set_text(s_date_layer, buffer);
+}
+
+static void update_second(struct tm *tick_time t) {
+  int32_t second_angle = (int32_t)(t->tm_sec * TRIG_MAX_ANGLE/60);
+
+  rot_bitmap_layer_set_angle(second_hand_layer, second_angle);
+}
+
+static void update_minute(struct tm *tick_time t) {
+  int32_t minute_angle = (int32_t)((t->tm_min + t->tm_sec/60.0) * TRIG_MAX_ANGLE/60);
+
+  rot_bitmap_layer_set_angle(minute_hand_inner_layer, minute_angle);
+  rot_bitmap_layer_set_angle(minute_hand_outer_layer, minute_angle);
+}
+
+static void update_hour(struct tm *tick_time t) {
+  int32_t hour_angle = (int32_t)((t->tm_hour + t->tm_min/60.0) * TRIG_MAX_ANGLE/24);
+
+  rot_bitmap_layer_set_angle(hour_hand_inner_layer, hour_angle);
+  rot_bitmap_layer_set_angle(hour_hand_outer_layer, hour_angle);
 }
 
 static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL); 
-  struct tm *t = localtime(&temp);
+  struct tm *tick_time = localtime(&temp);
 
-  int32_t second_angle = (int32_t)(t->tm_sec * TRIG_MAX_ANGLE/60);
-  int32_t minute_angle = (int32_t)((t->tm_min + t->tm_sec/60.0) * TRIG_MAX_ANGLE/60);
-  int32_t hour_angle = (int32_t)((t->tm_hour + t->tm_min/60.0) * TRIG_MAX_ANGLE/24);
-
-  rot_bitmap_layer_set_angle(second_hand_layer, second_angle);
-  rot_bitmap_layer_set_angle(minute_hand_inner_layer, minute_angle);
-  rot_bitmap_layer_set_angle(minute_hand_outer_layer, minute_angle);
-  rot_bitmap_layer_set_angle(hour_hand_inner_layer, hour_angle);
-  rot_bitmap_layer_set_angle(hour_hand_outer_layer, hour_angle);
+  update_second(tick_time);
+  update_minute(tick_time);
+  update_hour(tick_time);
+  update_date(tick_time);
 }
 
 static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
+  update_second();
+  update_minute();
+  update_hour();
   update_date();
-  update_time();
 }
 
 static void main_window_load(Window *window) {
@@ -153,7 +168,6 @@ static void init() {
   });
 
   window_stack_push(s_main_window, true);
-  update_date();
   update_time();
 
   tick_timer_service_subscribe(SECOND_UNIT, rotate_handler);
