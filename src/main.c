@@ -17,27 +17,27 @@ static RotBitmapLayer *minute_hand_inner_layer;
 static RotBitmapLayer *minute_hand_outer_layer;
 static RotBitmapLayer *second_hand_layer;
 
-static void update_date(struct tm *tick_time t) {
+static void update_date(struct tm *t) {
   static char buffer[] = "00";
 
   snprintf(buffer, sizeof("00"), "%d", t->tm_mday);
   text_layer_set_text(s_date_layer, buffer);
 }
 
-static void update_second(struct tm *tick_time t) {
+static void update_second(struct tm *t) {
   int32_t second_angle = (int32_t)(t->tm_sec * TRIG_MAX_ANGLE/60);
 
   rot_bitmap_layer_set_angle(second_hand_layer, second_angle);
 }
 
-static void update_minute(struct tm *tick_time t) {
+static void update_minute(struct tm *t) {
   int32_t minute_angle = (int32_t)((t->tm_min + t->tm_sec/60.0) * TRIG_MAX_ANGLE/60);
 
   rot_bitmap_layer_set_angle(minute_hand_inner_layer, minute_angle);
   rot_bitmap_layer_set_angle(minute_hand_outer_layer, minute_angle);
 }
 
-static void update_hour(struct tm *tick_time t) {
+static void update_hour(struct tm *t) {
   int32_t hour_angle = (int32_t)((t->tm_hour + t->tm_min/60.0) * TRIG_MAX_ANGLE/24);
 
   rot_bitmap_layer_set_angle(hour_hand_inner_layer, hour_angle);
@@ -56,10 +56,10 @@ static void update_time() {
 }
 
 static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_second();
-  update_minute();
-  update_hour();
-  update_date();
+  update_second(tick_time);
+  update_minute(tick_time);
+  update_hour(tick_time);
+  update_date(tick_time);
 }
 
 static void main_window_load(Window *window) {
