@@ -1,2 +1,2 @@
 # PebbleAviator24hWatch
-Pebble Pilots Watch with 24h dial.
+Pebble watchface that looks like a pilots watch with 24h dial.
