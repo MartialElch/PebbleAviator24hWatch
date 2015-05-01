@@ -57,9 +57,12 @@ static void update_time() {
 
 static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_second(tick_time);
-  update_minute(tick_time);
-  update_hour(tick_time);
-  update_date(tick_time);
+  if (units_changed & MINUTE_UNIT)
+    update_minute(tick_time);
+  if (units_changed & HOUR_UNIT)
+    update_hour(tick_time);
+  if (units_changed & DAY_UNIT)
+    update_date(tick_time);
 }
 
 static void main_window_load(Window *window) {
