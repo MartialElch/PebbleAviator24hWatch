@@ -94,10 +94,17 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
         if (strcmp(t->value->cstring, "on") == 0) {
           APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds on");
           persist_write_bool(KEY_SECONDS, true);
+          layer_set_hidden((Layer*)second_hand_layer, false);
           display_seconds = true;
+          // Get a tm structure and update seconds
+          time_t temp = time(NULL); 
+          struct tm *tick_time = localtime(&temp);
+          update_second(tick_time);
+          layer_set_hidden((Layer*)second_hand_layer, false);
         } else if (strcmp(t->value->cstring, "off") == 0) {
           APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds off");
           persist_write_bool(KEY_SECONDS, false);
+          layer_set_hidden((Layer*)second_hand_layer, true);
           display_seconds = false;
         }
         break;

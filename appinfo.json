@@ -1,7 +1,7 @@
 {
     "appKeys": {
-        "KEY_INVERT": 0,
-        "KEY_SECONDS": 1
+        "KEY_INVERT": 1,
+        "KEY_SECONDS": 0
     },
     "capabilities": [
         "configurable"
