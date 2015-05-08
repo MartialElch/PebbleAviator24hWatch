@@ -133,7 +133,7 @@ static void outbox_sent_handler(DictionaryIterator *iterator, void *context) {
 static void main_window_load(Window *window) {
   GRect bounds;
 
-  display_seconds = true;
+  display_seconds = persist_read_bool(KEY_SECONDS);
   
   // Create GBitmap, then set to created BitmapLayer
   s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
