@@ -17,6 +17,12 @@ static RotBitmapLayer *minute_hand_inner_layer;
 static RotBitmapLayer *minute_hand_outer_layer;
 static RotBitmapLayer *second_hand_layer;
 
+static bool display_seconds;
+
+enum {
+  KEY_SECONDS = 0
+};
+
 static void update_date(struct tm *t) {
   static char buffer[] = "00";
 
@@ -49,14 +55,18 @@ static void update_time() {
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
 
-  update_second(tick_time);
+  if (display_seconds) {
+    update_second(tick_time);
+  }
   update_minute(tick_time);
   update_hour(tick_time);
   update_date(tick_time);
 }
 
 static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_second(tick_time);
+  if (display_seconds) {
+    update_second(tick_time);
+  }
 
   // update minute handle only every 10 sec
   if (tick_time->tm_sec%10 == 0)
@@ -72,9 +82,59 @@ static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
     update_date(tick_time);
 }
 
+static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
+  // Read first item
+  Tuple *t = dict_read_first(iterator);
+
+  // For all items
+  while(t != NULL) {
+    // Which key was received?
+    switch(t->key) {
+      case KEY_SECONDS:
+        if (strcmp(t->value->cstring, "on") == 0) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds on");
+          persist_write_bool(KEY_SECONDS, true);
+          layer_set_hidden((Layer*)second_hand_layer, false);
+          display_seconds = true;
+          // Get a tm structure and update seconds
+          time_t temp = time(NULL); 
+          struct tm *tick_time = localtime(&temp);
+          update_second(tick_time);
+          layer_set_hidden((Layer*)second_hand_layer, false);
+        } else if (strcmp(t->value->cstring, "off") == 0) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds off");
+          persist_write_bool(KEY_SECONDS, false);
+          layer_set_hidden((Layer*)second_hand_layer, true);
+          display_seconds = false;
+        }
+        break;
+      default:
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
+        break;
+    }
+
+    // Look for next item
+    t = dict_read_next(iterator);
+  }
+}
+
+static void inbox_dropped_handler(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "message dropped");
+}
+
+static void outbox_failed_handler(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "message send failed");
+}
+
+static void outbox_sent_handler(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "message sent");
+}
+
 static void main_window_load(Window *window) {
   GRect bounds;
 
+  display_seconds = persist_read_bool(KEY_SECONDS);
+  
   // Create GBitmap, then set to created BitmapLayer
   s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
   s_background_layer = bitmap_layer_create(GRect(0, 0, 143, 167));
@@ -177,10 +237,23 @@ static void init() {
     .unload = main_window_unload
   });
 
+  // show the window on the watch with animated = true
   window_stack_push(s_main_window, true);
+
+  // register callbacks
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_register_inbox_dropped(inbox_dropped_handler);
+  app_message_register_outbox_failed(outbox_failed_handler);
+  app_message_register_outbox_sent(outbox_sent_handler);
+
+  // display correct time right from the start
   update_time();
 
+  // register with TickTimerService
   tick_timer_service_subscribe(SECOND_UNIT, rotate_handler);
+
+  // open AppMessage
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 static void deinit() {

@@ -1,7 +1,9 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_SECONDS": 0
+    },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "MartialElch",
     "longName": "Aviator 24h Watchface",
@@ -9,23 +11,14 @@
     "resources": {
         "media": [
             {
-                "file": "images/Zifferblatt.png",
-                "name": "IMAGE_BACKGROUND",
+                "file": "images/pilot.png",
+                "menuIcon": true,
+                "name": "IMAGE_MAIN_MENU",
                 "type": "png"
             },
             {
-                "file": "images/Zeiger_Sekunde.png",
-                "name": "IMAGE_SECOND_HAND",
-                "type": "png"
-            },
-            {
-                "file": "images/Zeiger_Minute_Inner.png",
-                "name": "IMAGE_MINUTE_HAND_INNER",
-                "type": "png"
-            },
-            {
-                "file": "images/Zeiger_Minute_Outer.png",
-                "name": "IMAGE_MINUTE_HAND_OUTER",
+                "file": "images/Zeiger_Stunde_Outer.png",
+                "name": "IMAGE_HOUR_HAND_OUTER",
                 "type": "png"
             },
             {
@@ -34,8 +27,23 @@
                 "type": "png"
             },
             {
-                "file": "images/Zeiger_Stunde_Outer.png",
-                "name": "IMAGE_HOUR_HAND_OUTER",
+                "file": "images/Zeiger_Minute_Outer.png",
+                "name": "IMAGE_MINUTE_HAND_OUTER",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Minute_Inner.png",
+                "name": "IMAGE_MINUTE_HAND_INNER",
+                "type": "png"
+            },
+            {
+                "file": "images/Zeiger_Sekunde.png",
+                "name": "IMAGE_SECOND_HAND",
+                "type": "png"
+            },
+            {
+                "file": "images/Zifferblatt.png",
+                "name": "IMAGE_BACKGROUND",
                 "type": "png"
             }
         ]
@@ -44,7 +52,7 @@
     "shortName": "Aviator 24h",
     "uuid": "0a1a7a13-d798-4067-ad0f-6cda4cd9b158",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }
