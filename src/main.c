@@ -94,7 +94,6 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
         if (strcmp(t->value->cstring, "on") == 0) {
           APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds on");
           persist_write_bool(KEY_SECONDS, true);
-          layer_set_hidden((Layer*)second_hand_layer, false);
           display_seconds = true;
           // Get a tm structure and update seconds
           time_t temp = time(NULL); 
@@ -201,6 +200,9 @@ static void main_window_load(Window *window) {
   bounds.origin.y = 0;
   layer_set_bounds((Layer*)second_hand_layer, bounds);
   rot_bitmap_set_compositing_mode(second_hand_layer, GCompOpSet);
+  if (!display_seconds) {
+    layer_set_hidden((Layer*)second_hand_layer, true);
+  }
   layer_add_child(window_get_root_layer(window), (Layer*)second_hand_layer);
   rot_bitmap_layer_set_angle(second_hand_layer, 0);
 }
