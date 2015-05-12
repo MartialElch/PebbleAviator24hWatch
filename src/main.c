@@ -1,85 +1,192 @@
 #include <pebble.h>
 
 static Window *s_main_window;
+static Layer *s_main_layer;
 static TextLayer *s_date_layer;
 static BitmapLayer *s_background_layer;
 static GBitmap *s_background_bitmap;
 
-static GBitmap *hour_hand_inner_bitmap;
-static GBitmap *hour_hand_outer_bitmap;
-static GBitmap *minute_hand_inner_bitmap;
-static GBitmap *minute_hand_outer_bitmap;
-static GBitmap *second_hand_bitmap;
+static GPath *s_sec_hand_path_ptr = NULL;
+static GPath *s_min_hand_path_ptr = NULL;
+static GPath *s_hour_hand_path_ptr = NULL;
 
-static RotBitmapLayer *hour_hand_inner_layer;
-static RotBitmapLayer *hour_hand_outer_layer;
-static RotBitmapLayer *minute_hand_inner_layer;
-static RotBitmapLayer *minute_hand_outer_layer;
-static RotBitmapLayer *second_hand_layer;
-
-static bool display_seconds;
-
-enum {
-  KEY_SECONDS = 0
+static const GPathInfo SEC_HAND_PATH = {
+  2,
+  (GPoint []) {
+    {0, -4}, {0, -79},
+  }
 };
 
-static void update_date(struct tm *t) {
-  static char buffer[] = "00";
+static const GPathInfo MIN_HAND_PATH = {
+  7,
+  (GPoint []) {
+    {-1, 0}, {-1, -13}, {-5, -50}, {0, -70}, {5, -50}, {1, -13}, {1, 0}
+  }
+};
 
-  snprintf(buffer, sizeof("00"), "%d", t->tm_mday);
-  text_layer_set_text(s_date_layer, buffer);
-}
+static const GPathInfo HOUR_HAND_PATH = {
+  7,
+  (GPoint []) {
+    {-3, 0}, {-3, -13}, {-7, -42}, {0, -52}, {7, -42}, {3, -13}, {3, 0}
+  }
+};
 
-static void update_second(struct tm *t) {
-  int32_t second_angle = (int32_t)(t->tm_sec * TRIG_MAX_ANGLE/60);
+static bool display_seconds;
+static bool invert;
 
-  rot_bitmap_layer_set_angle(second_hand_layer, second_angle);
-}
+enum {
+  KEY_SECONDS = 0,
+  KEY_INVERT = 1
+};
 
-static void update_minute(struct tm *t) {
-  int32_t minute_angle = (int32_t)((t->tm_min + t->tm_sec/60.0) * TRIG_MAX_ANGLE/60);
+static void update_display(Layer *s_main_layer, GContext* ctx) {
+  // Fill the path:
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  gpath_draw_filled(ctx, s_hour_hand_path_ptr);
+  gpath_draw_filled(ctx, s_min_hand_path_ptr);
 
-  rot_bitmap_layer_set_angle(minute_hand_inner_layer, minute_angle);
-  rot_bitmap_layer_set_angle(minute_hand_outer_layer, minute_angle);
-}
+  // draw circle in middle
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_circle(ctx, GPoint(71,83 ), 8);
 
-static void update_hour(struct tm *t) {
-  int32_t hour_angle = (int32_t)((t->tm_hour + t->tm_min/60.0) * TRIG_MAX_ANGLE/24);
-
-  rot_bitmap_layer_set_angle(hour_hand_inner_layer, hour_angle);
-  rot_bitmap_layer_set_angle(hour_hand_outer_layer, hour_angle);
+  // Stroke the path:
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+  gpath_draw_outline(ctx, s_hour_hand_path_ptr);
+  gpath_draw_outline(ctx, s_min_hand_path_ptr);
+  if (display_seconds) {
+    if (!invert) {
+      graphics_context_set_stroke_color(ctx, GColorWhite);      
+    }
+    gpath_draw_outline(ctx, s_sec_hand_path_ptr);
+  }
 }
 
 static void update_time() {
+  // date buffer
+  static char buffer[] = "00";
   // Get a tm structure
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
 
   if (display_seconds) {
-    update_second(tick_time);
+    // update seconds
+    gpath_rotate_to(s_sec_hand_path_ptr,  (tick_time->tm_sec * TRIG_MAX_ANGLE / 60));
   }
-  update_minute(tick_time);
-  update_hour(tick_time);
-  update_date(tick_time);
+  // update minutes
+  gpath_rotate_to(s_min_hand_path_ptr,  ((tick_time->tm_min + tick_time->tm_sec/60.0) * TRIG_MAX_ANGLE / 60));
+  // update hours
+  gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 24));
+
+  // update date
+  snprintf(buffer, sizeof("00"), "%d", tick_time->tm_mday);
+  text_layer_set_text(s_date_layer, buffer);
+
+  // update display
+  layer_mark_dirty(s_main_layer);
 }
 
-static void rotate_handler(struct tm *tick_time, TimeUnits units_changed) {
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  // date buffer
+  static char buffer[] = "00";
+
   if (display_seconds) {
-    update_second(tick_time);
+    // update seconds
+    gpath_rotate_to(s_sec_hand_path_ptr,  (tick_time->tm_sec * TRIG_MAX_ANGLE / 60));
   }
 
   // update minute handle only every 10 sec
-  if (tick_time->tm_sec%10 == 0)
-    update_minute(tick_time);
+  if (tick_time->tm_sec%10 == 0) {
+    // update minutes
+    gpath_rotate_to(s_min_hand_path_ptr,  ((tick_time->tm_min + tick_time->tm_sec/60.0) * TRIG_MAX_ANGLE / 60));
+  }
 
   // update hour handle only every 10 min
-  if (units_changed & MINUTE_UNIT)
-    if (tick_time->tm_min%10 == 0)
-      update_hour(tick_time);
+  if (units_changed & MINUTE_UNIT) {
+    if (tick_time->tm_min%10 == 0) {
+      // update hours
+      gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 24));
+    }
+  }
 
   // update date only when it changes
-  if (units_changed & DAY_UNIT)
-    update_date(tick_time);
+  if (units_changed & DAY_UNIT) {
+    snprintf(buffer, sizeof("00"), "%d", tick_time->tm_mday);
+    text_layer_set_text(s_date_layer, buffer);
+  }
+
+  // update display
+  layer_mark_dirty(s_main_layer);
+}
+
+static void main_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(s_main_window);
+  GRect bounds = layer_get_bounds(window_layer);
+
+  display_seconds = true;
+  if (persist_exists(KEY_SECONDS)) {
+    display_seconds = persist_read_bool(KEY_SECONDS);
+  }
+  invert = false;
+  if (persist_exists(KEY_INVERT)) {
+    invert = persist_read_bool(KEY_INVERT);
+  }
+
+  // Create GBitmap, then set to created BitmapLayer
+  if (invert) {
+    s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INVERT);
+  } else {
+    s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
+  }
+  s_background_layer = bitmap_layer_create(bounds);
+  bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
+  layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_background_layer));
+
+  // create text layer for date display
+  s_date_layer = text_layer_create(GRect(115, 74, 12, 14));
+  text_layer_set_background_color(s_date_layer, GColorClear);
+  text_layer_set_text_color(s_date_layer, GColorBlack);
+  text_layer_set_text(s_date_layer, "00");
+  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_date_layer));
+
+  // create display canvas
+  s_main_layer = layer_create(bounds);
+
+  // register callback to execute when layer ist marked dirty
+  layer_set_update_proc(s_main_layer, update_display);
+  layer_add_child(window_get_root_layer(window), s_main_layer);
+
+  // setup watch hands
+  // create watch hands with paths
+  s_sec_hand_path_ptr = gpath_create(&SEC_HAND_PATH);
+  s_min_hand_path_ptr = gpath_create(&MIN_HAND_PATH);
+  s_hour_hand_path_ptr = gpath_create(&HOUR_HAND_PATH);
+
+  // Translate to middle of screen:
+  gpath_move_to(s_sec_hand_path_ptr, GPoint(71, 83));
+  gpath_move_to(s_min_hand_path_ptr, GPoint(71, 83));
+  gpath_move_to(s_hour_hand_path_ptr, GPoint(71, 83));
+
+  // set time when loading
+  update_time();
+}
+
+static void main_window_unload(Window * window) {
+  // destroy text layer
+  text_layer_destroy(s_date_layer);
+
+  // destroy watch hands layer
+  layer_destroy(s_main_layer);
+
+  // destroy background
+  gbitmap_destroy(s_background_bitmap);
+  bitmap_layer_destroy(s_background_layer);
+}
+
+static void reconfigure() {
+  main_window_unload(s_main_window);
+  main_window_load(s_main_window);
 }
 
 static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
@@ -95,16 +202,33 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
           APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds on");
           persist_write_bool(KEY_SECONDS, true);
           display_seconds = true;
-          // Get a tm structure and update seconds
-          time_t temp = time(NULL); 
-          struct tm *tick_time = localtime(&temp);
-          update_second(tick_time);
-          layer_set_hidden((Layer*)second_hand_layer, false);
+          // update display
+          update_time();
         } else if (strcmp(t->value->cstring, "off") == 0) {
           APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds off");
           persist_write_bool(KEY_SECONDS, false);
-          layer_set_hidden((Layer*)second_hand_layer, true);
           display_seconds = false;
+        }
+        break;
+      case KEY_INVERT:
+        if (strcmp(t->value->cstring, "on") == 0) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "set invert on");
+          persist_write_bool(KEY_INVERT, true);
+          invert = true;
+          // s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INVERT);
+          // bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
+          // update display
+          // update_time();
+          reconfigure();
+        } else if (strcmp(t->value->cstring, "off") == 0) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "set invert off");
+          persist_write_bool(KEY_INVERT, false);
+          invert = false;
+          // s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
+          // bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
+          // update display
+          // update_time();
+          reconfigure();
         }
         break;
       default:
@@ -129,110 +253,8 @@ static void outbox_sent_handler(DictionaryIterator *iterator, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "message sent");
 }
 
-static void main_window_load(Window *window) {
-  GRect bounds;
-
-  display_seconds = persist_read_bool(KEY_SECONDS);
-  
-  // Create GBitmap, then set to created BitmapLayer
-  s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-  s_background_layer = bitmap_layer_create(GRect(0, 0, 143, 167));
-  bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-  layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_background_layer));
-
-  // create text layer for date display
-  s_date_layer = text_layer_create(GRect(114, 74, 12, 14));
-  text_layer_set_background_color(s_date_layer, GColorClear);
-  text_layer_set_text_color(s_date_layer, GColorBlack);
-  text_layer_set_text(s_date_layer, "00");
-  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
-  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_date_layer));
-
-  // create hour hand layer
-  hour_hand_outer_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOUR_HAND_OUTER);
-  hour_hand_outer_layer = rot_bitmap_layer_create(hour_hand_outer_bitmap);
-  bounds = layer_get_bounds((Layer*)hour_hand_outer_layer);
-  bounds.origin.x = -13;
-  bounds.origin.y = 0;
-  layer_set_bounds((Layer*)hour_hand_outer_layer, bounds);
-  rot_bitmap_set_compositing_mode(hour_hand_outer_layer, GCompOpAnd);
-  layer_add_child(window_get_root_layer(window), (Layer*)hour_hand_outer_layer);
-  rot_bitmap_layer_set_angle(hour_hand_outer_layer, 0);
-
-  hour_hand_inner_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOUR_HAND_INNER);
-  hour_hand_inner_layer = rot_bitmap_layer_create(hour_hand_inner_bitmap);
-  bounds = layer_get_bounds((Layer*)hour_hand_inner_layer);
-  bounds.origin.x = -13;
-  bounds.origin.y = 0;
-  layer_set_bounds((Layer*)hour_hand_inner_layer, bounds);
-  rot_bitmap_set_compositing_mode(hour_hand_inner_layer, GCompOpSet);
-  layer_add_child(window_get_root_layer(window), (Layer*)hour_hand_inner_layer);
-  rot_bitmap_layer_set_angle(hour_hand_inner_layer, 0);
-
-  // create minute hand layer
-  minute_hand_outer_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MINUTE_HAND_OUTER);
-  minute_hand_outer_layer = rot_bitmap_layer_create(minute_hand_outer_bitmap);
-  layer_add_child((Layer*)minute_hand_outer_layer, (Layer*)minute_hand_outer_layer);
-  bounds = layer_get_bounds((Layer*)minute_hand_outer_layer);
-  bounds.origin.x = -13;
-  bounds.origin.y = 0;
-  layer_set_bounds((Layer*)minute_hand_outer_layer, bounds);
-  rot_bitmap_set_compositing_mode(minute_hand_outer_layer, GCompOpAnd);
-  layer_add_child(window_get_root_layer(window), (Layer*)minute_hand_outer_layer);
-  rot_bitmap_layer_set_angle(minute_hand_outer_layer, 0);
-
-  minute_hand_inner_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MINUTE_HAND_INNER);
-  minute_hand_inner_layer = rot_bitmap_layer_create(minute_hand_inner_bitmap);
-  bounds = layer_get_bounds((Layer*)minute_hand_inner_layer);
-  bounds.origin.x = -13;
-  bounds.origin.y = 0;
-  layer_set_bounds((Layer*)minute_hand_inner_layer, bounds);
-  rot_bitmap_set_compositing_mode(minute_hand_inner_layer, GCompOpSet);
-  layer_add_child(window_get_root_layer(window), (Layer*)minute_hand_inner_layer);
-  rot_bitmap_layer_set_angle(minute_hand_inner_layer, 0);
-
-  // create second hand layer
-  second_hand_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SECOND_HAND);
-  second_hand_layer = rot_bitmap_layer_create(second_hand_bitmap);
-  bounds = layer_get_bounds((Layer*)second_hand_layer);
-  bounds.origin.x = -12;
-  bounds.origin.y = 0;
-  layer_set_bounds((Layer*)second_hand_layer, bounds);
-  rot_bitmap_set_compositing_mode(second_hand_layer, GCompOpSet);
-  if (!display_seconds) {
-    layer_set_hidden((Layer*)second_hand_layer, true);
-  }
-  layer_add_child(window_get_root_layer(window), (Layer*)second_hand_layer);
-  rot_bitmap_layer_set_angle(second_hand_layer, 0);
-}
-
-static void main_window_unload(Window * window) {
-  // destroy bitmap layer
-  rot_bitmap_layer_destroy(second_hand_layer);
-  rot_bitmap_layer_destroy(minute_hand_inner_layer);
-  rot_bitmap_layer_destroy(minute_hand_outer_layer);
-  rot_bitmap_layer_destroy(hour_hand_inner_layer);
-  rot_bitmap_layer_destroy(hour_hand_outer_layer);
-
-  // destroy bitmap
-  gbitmap_destroy(second_hand_bitmap);
-  gbitmap_destroy(minute_hand_inner_bitmap);
-  gbitmap_destroy(minute_hand_outer_bitmap);
-  gbitmap_destroy(hour_hand_inner_bitmap);
-  gbitmap_destroy(hour_hand_outer_bitmap);
-
-  // destroy text layer
-  text_layer_destroy(s_date_layer);
-
-  // destroy background
-  gbitmap_destroy(s_background_bitmap);
-  bitmap_layer_destroy(s_background_layer);
-}
-
 static void init() {
   s_main_window = window_create();
-  window_set_background_color(s_main_window, GColorBlack);
   
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = main_window_load,
@@ -252,7 +274,7 @@ static void init() {
   update_time();
 
   // register with TickTimerService
-  tick_timer_service_subscribe(SECOND_UNIT, rotate_handler);
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
   // open AppMessage
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());

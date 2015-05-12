@@ -1,6 +1,6 @@
 Pebble.addEventListener('showConfiguration', function(e) {
   // Show config page
-  Pebble.openURL("http://deepshitnine.gmxhome.de/MartialElch/PebblAviator24hWatchConfigV1.2.html");
+  Pebble.openURL("http://deepshitnine.gmxhome.de/MartialElch/PebblAviator24hWatchConfigV1.3.html");
 });
 
 Pebble.addEventListener('webviewclosed',
@@ -10,7 +10,8 @@ Pebble.addEventListener('webviewclosed',
 
     //Send to Pebble, persist there
     var message = {
-      "KEY_SECONDS": configuration.seconds
+      "KEY_SECONDS": configuration.seconds,
+      "KEY_INVERT":  configuration.invert
     };
     Pebble.sendAppMessage(
       message,
