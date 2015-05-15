@@ -115,20 +115,12 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window * window) {
-  // destroy text layer
-  text_layer_destroy(s_date_layer);
-
   // destroy watch hands layer
   layer_destroy(s_main_layer);
 
   // destroy background
   gbitmap_destroy(s_background_bitmap);
   bitmap_layer_destroy(s_background_layer);
-}
-
-static void reconfigure() {
-  main_window_unload(s_main_window);
-  main_window_load(s_main_window);
 }
 
 static void init() {
