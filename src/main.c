@@ -58,7 +58,7 @@ static void update_time() {
   // update minutes
   gpath_rotate_to(s_min_hand_path_ptr,  ((tick_time->tm_min + tick_time->tm_sec/60.0) * TRIG_MAX_ANGLE / 60));
   // update hours
-  gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 24));
+  gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0 + 12) * TRIG_MAX_ANGLE / 24));
 
   // update display
   layer_mark_dirty(s_main_layer);
@@ -78,7 +78,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (units_changed & MINUTE_UNIT) {
     if (tick_time->tm_min%10 == 0) {
       // update hours
-      gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 24));
+      gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0 + 12) * TRIG_MAX_ANGLE / 24));
     }
   }
 

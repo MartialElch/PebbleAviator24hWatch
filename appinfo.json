@@ -9,19 +9,14 @@
     "resources": {
         "media": [
             {
-                "file": "images/pilot.png",
-                "menuIcon": true,
-                "name": "IMAGE_MAIN_MENU",
-                "type": "png"
-            },
-            {
                 "file": "images/Zifferblatt.png",
                 "name": "IMAGE_BACKGROUND",
                 "type": "png"
             },
             {
-                "file": "images/Zifferblatt_white.png",
-                "name": "IMAGE_BACKGROUND_INVERT",
+                "file": "images/pilot.png",
+                "menuIcon": true,
+                "name": "IMAGE_MAIN_MENU",
                 "type": "png"
             }
         ]
