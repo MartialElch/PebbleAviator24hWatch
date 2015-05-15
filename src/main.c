@@ -44,6 +44,7 @@ static void update_display(Layer *s_main_layer, GContext* ctx) {
   graphics_context_set_stroke_color(ctx, GColorBlack);
   gpath_draw_outline(ctx, s_hour_hand_path_ptr);
   gpath_draw_outline(ctx, s_min_hand_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
   gpath_draw_outline(ctx, s_sec_hand_path_ptr);
 }
 
