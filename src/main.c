@@ -6,6 +6,9 @@ static TextLayer *s_date_layer;
 static BitmapLayer *s_background_layer;
 static GBitmap *s_background_bitmap;
 
+static bool display_seconds;
+static bool invert;
+
 static GPath *s_sec_hand_path_ptr = NULL;
 static GPath *s_min_hand_path_ptr = NULL;
 static GPath *s_hour_hand_path_ptr = NULL;
@@ -30,9 +33,6 @@ static const GPathInfo HOUR_HAND_PATH = {
     {-3, 0}, {-3, -13}, {-7, -42}, {0, -52}, {7, -42}, {3, -13}, {3, 0}
   }
 };
-
-static bool display_seconds;
-static bool invert;
 
 enum {
   KEY_SECONDS = 0,
@@ -122,6 +122,7 @@ static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(s_main_window);
   GRect bounds = layer_get_bounds(window_layer);
 
+  // read persistent data
   display_seconds = true;
   if (persist_exists(KEY_SECONDS)) {
     display_seconds = persist_read_bool(KEY_SECONDS);
@@ -145,7 +146,6 @@ static void main_window_load(Window *window) {
   s_date_layer = text_layer_create(GRect(115, 74, 12, 14));
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorBlack);
-  text_layer_set_text(s_date_layer, "00");
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
   text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_date_layer));
@@ -167,9 +167,6 @@ static void main_window_load(Window *window) {
   gpath_move_to(s_sec_hand_path_ptr, GPoint(71, 83));
   gpath_move_to(s_min_hand_path_ptr, GPoint(71, 83));
   gpath_move_to(s_hour_hand_path_ptr, GPoint(71, 83));
-
-  // set time when loading
-  update_time();
 }
 
 static void main_window_unload(Window * window) {
@@ -187,6 +184,7 @@ static void main_window_unload(Window * window) {
 static void reconfigure() {
   main_window_unload(s_main_window);
   main_window_load(s_main_window);
+  update_time();
 }
 
 static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
@@ -199,35 +197,23 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     switch(t->key) {
       case KEY_SECONDS:
         if (strcmp(t->value->cstring, "on") == 0) {
-          APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds on");
           persist_write_bool(KEY_SECONDS, true);
           display_seconds = true;
           // update display
           update_time();
         } else if (strcmp(t->value->cstring, "off") == 0) {
-          APP_LOG(APP_LOG_LEVEL_DEBUG, "set seconds off");
           persist_write_bool(KEY_SECONDS, false);
           display_seconds = false;
         }
         break;
       case KEY_INVERT:
         if (strcmp(t->value->cstring, "on") == 0) {
-          APP_LOG(APP_LOG_LEVEL_DEBUG, "set invert on");
           persist_write_bool(KEY_INVERT, true);
           invert = true;
-          // s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INVERT);
-          // bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-          // update display
-          // update_time();
           reconfigure();
         } else if (strcmp(t->value->cstring, "off") == 0) {
-          APP_LOG(APP_LOG_LEVEL_DEBUG, "set invert off");
           persist_write_bool(KEY_INVERT, false);
           invert = false;
-          // s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-          // bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-          // update display
-          // update_time();
           reconfigure();
         }
         break;
