@@ -1,0 +1,50 @@
+{
+    "author": "MartialElch",
+    "dependencies": {},
+    "keywords": [],
+    "name": "aviator-24h",
+    "pebble": {
+        "capabilities": [
+            "configurable"
+        ],
+        "displayName": "Aviator 24h Watchface",
+        "enableMultiJS": false,
+        "messageKeys": {
+            "KEY_INVERT": 1,
+            "KEY_SECONDS": 0
+        },
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/Zifferblatt.png",
+                    "name": "IMAGE_BACKGROUND",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/pilot.png",
+                    "menuIcon": true,
+                    "name": "IMAGE_MAIN_MENU",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Zifferblatt_white.png",
+                    "name": "IMAGE_BACKGROUND_INVERT",
+                    "type": "png"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt"
+        ],
+        "uuid": "0a1a7a13-d798-4067-ad0f-6cda4cd9b158",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.5.0"
+}
