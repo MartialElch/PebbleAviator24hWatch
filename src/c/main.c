@@ -14,11 +14,13 @@ static GPath *s_min_hand_path_ptr = NULL;
 static GPath *s_hour_hand_path_ptr = NULL;
 
 #ifdef PBL_COLOR
-  #define SEC_HAND_COLOR      GColorRed
-  #define MINHOUR_HAND_COLOR  GColorMintGreen
+  #define SEC_HAND_COLOR         GColorRajah
+  #define SEC_HAND_INVERT_COLOR  GColorRed
+  #define MINHOUR_HAND_COLOR     GColorMintGreen
 #else
-  #define SEC_HAND_COLOR      GColorWhite
-  #define MINHOUR_HAND_COLOR  GColorWhite
+  #define SEC_HAND_COLOR         GColorWhite
+  #define SEC_HAND_INVERT_COLOR  GColorBlack
+  #define MINHOUR_HAND_COLOR     GColorWhite
 #endif
 
 static const GPathInfo SEC_HAND_PATH = {
@@ -65,7 +67,7 @@ static void update_display(Layer *s_main_layer, GContext* ctx) {
     if (!invert) {
       graphics_context_set_stroke_color(ctx, SEC_HAND_COLOR);      
     } else {
-      graphics_context_set_stroke_color(ctx, GColorBlack);           
+      graphics_context_set_stroke_color(ctx, SEC_HAND_INVERT_COLOR);           
     }
     gpath_draw_outline(ctx, s_sec_hand_path_ptr);
   }
