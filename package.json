@@ -35,6 +35,12 @@
           "type": "bitmap",
           "name": "IMAGE_BACKGROUND_INVERT",
           "file": "images/Zifferblatt_white.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MAIN_MENU",
+          "file": "images/pilot.png",
+          "menuIcon": true
         }
       ]
     }
