@@ -44,11 +44,6 @@ static const GPathInfo HOUR_HAND_PATH = {
   }
 };
 
-enum {
-  KEY_SECONDS = 0,
-  KEY_INVERT = 1
-};
-
 static void update_display(Layer *s_main_layer, GContext* ctx) {
   // Fill the path:
   graphics_context_set_fill_color(ctx, MINHOUR_HAND_COLOR);
@@ -136,12 +131,12 @@ static void main_window_load(Window *window) {
 
   // read persistent data
   display_seconds = true;
-  if (persist_exists(KEY_SECONDS)) {
-    display_seconds = persist_read_bool(KEY_SECONDS);
+  if (persist_exists(MESSAGE_KEY_SECONDS)) {
+    display_seconds = persist_read_bool(MESSAGE_KEY_SECONDS);
   }
   invert = false;
-  if (persist_exists(KEY_INVERT)) {
-    invert = persist_read_bool(KEY_INVERT);
+  if (persist_exists(MESSAGE_KEY_INVERT)) {
+    invert = persist_read_bool(MESSAGE_KEY_INVERT);
   }
 
   // Create GBitmap, then set to created BitmapLayer
@@ -200,42 +195,32 @@ static void reconfigure() {
 }
 
 static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
-  // Read first item
-  Tuple *t = dict_read_first(iterator);
+  Tuple *msg;
 
-  // For all items
-  while(t != NULL) {
-    // Which key was received?
-    switch(t->key) {
-      case KEY_SECONDS:
-        if (strcmp(t->value->cstring, "on") == 0) {
-          persist_write_bool(KEY_SECONDS, true);
-          display_seconds = true;
-          // update display
-          update_time();
-        } else if (strcmp(t->value->cstring, "off") == 0) {
-          persist_write_bool(KEY_SECONDS, false);
-          display_seconds = false;
-        }
-        break;
-      case KEY_INVERT:
-        if (strcmp(t->value->cstring, "on") == 0) {
-          persist_write_bool(KEY_INVERT, true);
-          invert = true;
-          reconfigure();
-        } else if (strcmp(t->value->cstring, "off") == 0) {
-          persist_write_bool(KEY_INVERT, false);
-          invert = false;
-          reconfigure();
-        }
-        break;
-      default:
-        APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
-        break;
+  // Which key was received?
+  if ((msg = dict_find(iterator, MESSAGE_KEY_SECONDS))) {
+    if (strcmp(msg->value->cstring, "on") == 0) {
+      persist_write_bool(MESSAGE_KEY_SECONDS, true);
+      display_seconds = true;
+      // update display
+      update_time();
+    } else if (strcmp(msg->value->cstring, "off") == 0) {
+      persist_write_bool(MESSAGE_KEY_SECONDS, false);
+      display_seconds = false;
     }
-
-    // Look for next item
-    t = dict_read_next(iterator);
+  }
+  if ((msg = dict_find(iterator, MESSAGE_KEY_INVERT))) {
+    if (strcmp(msg->value->cstring, "on") == 0) {
+      APP_LOG(APP_LOG_LEVEL_ERROR, "[inbox_received_handler] invert on");
+      persist_write_bool(MESSAGE_KEY_INVERT, true);
+      invert = true;
+      reconfigure();
+    } else if (strcmp(msg->value->cstring, "off") == 0) {
+      APP_LOG(APP_LOG_LEVEL_ERROR, "[inbox_received_handler] invert off");
+      persist_write_bool(MESSAGE_KEY_INVERT, false);
+      invert = false;
+      reconfigure();
+    }
   }
 }
 

@@ -10,8 +10,8 @@ Pebble.addEventListener('webviewclosed',
 
     //Send to Pebble, persist there
     var message = {
-      "KEY_SECONDS": configuration.seconds,
-      "KEY_INVERT":  configuration.invert
+      "SECONDS": configuration.seconds,
+      "INVERT":  configuration.invert
     };
     Pebble.sendAppMessage(
       message,
