@@ -180,6 +180,11 @@ static void main_window_unload(Window * window) {
   // destroy text layer
   text_layer_destroy(s_date_layer);
 
+  // destroy watch hands
+  gpath_destroy(s_sec_hand_path_ptr);
+  gpath_destroy(s_min_hand_path_ptr);
+  gpath_destroy(s_hour_hand_path_ptr);
+
   // destroy watch hands layer
   layer_destroy(s_main_layer);
 
